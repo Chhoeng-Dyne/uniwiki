@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/university_model.dart';
+import '../../university/screens/university_screen.dart';
 
 class BookmarkScreen extends StatelessWidget {
   final List<UniversityModel> universities;
@@ -51,13 +52,71 @@ class BookmarkScreen extends StatelessWidget {
             final university = universities[index - 3];
             return Padding(
               padding: const EdgeInsets.only(bottom: 14),
-              child: _BookmarkedUniversityCard(
-                university: university,
-                onRemove: () => onRemoveBookmark(university),
+              child: Dismissible(
+                key: ValueKey('bookmark_${university.name}'),
+                direction: DismissDirection.horizontal,
+                onDismissed: (_) => onRemoveBookmark(university),
+                background: _buildSwipeDeleteBackground(isLeft: true),
+                secondaryBackground: _buildSwipeDeleteBackground(isLeft: false),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => UniversityScreen(
+                          university: university,
+                          isBookmarked: true,
+                          onBookmarkToggle: onRemoveBookmark,
+                        ),
+                      ),
+                    );
+                  },
+                  child: _BookmarkedUniversityCard(
+                    university: university,
+                  ),
+                ),
               ),
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildSwipeDeleteBackground({required bool isLeft}) {
+    return Container(
+      alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 22),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: isLeft
+            ? const [
+                Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+                SizedBox(width: 8),
+                Text(
+                  'Delete',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ]
+            : const [
+                Text(
+                  'Delete',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(width: 8),
+                Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+              ],
       ),
     );
   }
@@ -100,11 +159,9 @@ class _EmptyBookmarks extends StatelessWidget {
 
 class _BookmarkedUniversityCard extends StatelessWidget {
   final UniversityModel university;
-  final VoidCallback onRemove;
 
   const _BookmarkedUniversityCard({
     required this.university,
-    required this.onRemove,
   });
 
   @override
@@ -135,45 +192,40 @@ class _BookmarkedUniversityCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  university.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.dark,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    university.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.dark,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 7),
-                _InfoLine(
-                  icon: Icons.location_on_outlined,
-                  text: university.location,
-                ),
-                const SizedBox(height: 4),
-                _InfoLine(
-                  icon: Icons.account_balance_outlined,
-                  text: university.campus,
-                ),
-                const SizedBox(height: 4),
-                _InfoLine(
-                  icon: Icons.payments_outlined,
-                  text: university.tuitionLabel,
-                  color: AppColors.primary,
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: onRemove,
-            tooltip: 'Remove bookmark',
-            icon: const Icon(
-              Icons.bookmark_remove_outlined,
-              color: AppColors.primary,
+                  const SizedBox(height: 7),
+                  _InfoLine(
+                    icon: Icons.location_on_outlined,
+                    text: university.location,
+                  ),
+                  const SizedBox(height: 4),
+                  _InfoLine(
+                    icon: Icons.account_balance_outlined,
+                    text: university.campus,
+                  ),
+                  const SizedBox(height: 4),
+                  _InfoLine(
+                    icon: Icons.payments_outlined,
+                    text: university.tuitionLabel,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
             ),
           ),
         ],

@@ -41,12 +41,8 @@ class CustomBottomNavBar extends StatelessWidget {
       child: Row(
         children: List.generate(items.length, (index) {
           final bool isSelected = index == currentIndex;
-          // Home retains a stronger visual presence; the active destination
-          // expands too, so its label always has enough room to be readable.
-          final int flex = index == 0 || isSelected ? 3 : 2;
 
           return Expanded(
-            flex: flex,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => onTap(index),
@@ -54,41 +50,37 @@ class CustomBottomNavBar extends StatelessWidget {
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeOutCubic,
                 margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-                padding: EdgeInsets.symmetric(
-                  horizontal: isSelected ? 4 : 0,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 2),
                 decoration: const BoxDecoration(color: Colors.transparent),
-                child: Row(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       items[index].icon,
-                      size: 21,
+                      size: isSelected ? 23 : 22,
                       color: isSelected
                           ? AppColors.primary
-                          : AppColors.dark.withValues(alpha: 0.62),
+                          : AppColors.dark.withValues(alpha: 0.55),
                     ),
-                    Flexible(
-                      child: AnimatedSize(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeOutCubic,
-                        child: isSelected
-                            ? Padding(
-                                padding: const EdgeInsets.only(left: 6),
-                                child: Text(
-                                  items[index].label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primary,
-                                  ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutCubic,
+                      child: isSelected
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 3),
+                              child: Text(
+                                items[index].label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primary,
                                 ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ],
                 ),
