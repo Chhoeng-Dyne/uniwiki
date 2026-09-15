@@ -1,9 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../data/mock/mock_scholarships.dart';
+import '../../../data/models/scholarship_model.dart';
 import '../../../data/models/university_model.dart';
 import '../../major/screens/major_detail_screen.dart';
+import '../../scholarships/widgets/apply_scholarship_modal.dart';
 
 class UniversityScreen extends StatefulWidget {
   final UniversityModel university;
@@ -35,6 +39,85 @@ class _UniversityScreenState extends State<UniversityScreen> {
       _bookmarked = !_bookmarked;
     });
     widget.onBookmarkToggle(widget.university);
+  }
+
+  ScholarshipModel? get _availableScholarship {
+    final uniName = widget.university.name.toLowerCase().trim();
+    for (final s in mockScholarships) {
+      final sUni = s.universityName.toLowerCase().trim();
+      if (sUni == uniName || sUni.contains(uniName) || uniName.contains(sUni)) {
+        return s;
+      }
+    }
+    return null;
+  }
+
+  void _handleApplyScholarship() {
+    final scholarship = _availableScholarship;
+    if (scholarship != null) {
+      ApplyScholarshipModal.show(
+        context: context,
+        scholarship: scholarship,
+        onSubmitted: () {
+          NotificationService.instance.addNotification(
+            title: 'Application Started: ${scholarship.discountPercent} Grant',
+            message:
+                'You initiated application for ${scholarship.provider} at ${scholarship.universityName}. Deadline in ${scholarship.daysLeft} days.',
+            actionTag: 'scholarship',
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Application submitted for ${scholarship.provider}!'),
+              backgroundColor: AppColors.primary,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      _showUnavailableScholarship();
+    }
+  }
+
+  void _showUnavailableScholarship() {
+    // 1. Send alert to Notification Service
+    NotificationService.instance.addNotification(
+      title: 'Unavailable Scholarship',
+      message: 'No active scholarships are currently available for ${widget.university.name}.',
+      actionTag: 'scholarship',
+    );
+
+    // 2. Show one-line pop text at the bottom
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.info_outline_rounded, color: Colors.white, size: 18),
+            SizedBox(width: 10),
+            Text(
+              'Unavailable Scholarship',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                fontSize: 13.5,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.dark,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   @override
@@ -194,6 +277,37 @@ class _UniversityScreenState extends State<UniversityScreen> {
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Apply Scholarship Action Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _handleApplyScholarship,
+                            icon: const Icon(
+                              Icons.school_rounded,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              'Apply Scholarship',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              elevation: 1,
+                              shadowColor: AppColors.primary.withValues(alpha: 0.3),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 22),

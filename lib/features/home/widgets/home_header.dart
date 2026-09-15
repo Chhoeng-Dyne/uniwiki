@@ -100,6 +100,27 @@ class HomeHeader extends StatelessWidget {
               ),
             ),
 
+            // Large Watermark Logo blended into background gradient
+            Positioned.fill(
+              child: Align(
+                alignment: const Alignment(0.0, -0.1),
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: 0.22,
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 270,
+                      height: 270,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+
+
             // Main Content Layout (Preserves exact dimensions for content stability)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 52, 20, 22),
@@ -110,54 +131,60 @@ class HomeHeader extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: onProfileTap,
-                        child: Row(
-                          children: [
-                            // Frosted Glass Avatar
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.white.withValues(alpha: 0.36),
-                                    Colors.white.withValues(alpha: 0.12),
+                      Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: onProfileTap,
+                          child: Row(
+                            children: [
+                              // Frosted Glass Avatar
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.white.withValues(alpha: 0.36),
+                                      Colors.white.withValues(alpha: 0.12),
+                                    ],
+                                  ),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.75),
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.15),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
                                   ],
                                 ),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.75),
-                                  width: 1.5,
+                                child: const Icon(
+                                  Icons.person_rounded,
+                                  color: Colors.white,
+                                  size: 26,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.15),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  userName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: -0.4,
                                   ),
-                                ],
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.person_rounded,
-                                color: Colors.white,
-                                size: 26,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              userName,
-                              style: const TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: -0.4,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
 
@@ -229,12 +256,12 @@ class HomeHeader extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
 
-                  // Tagline with glowing sparkle star icon
+                  // Tagline
                   Row(
                     children: [
-                      const SizedBox(width: 7),
+                      const SizedBox(width: 4),
                       Text(
                         'Find your right fit university',
                         style: TextStyle(
@@ -246,9 +273,9 @@ class HomeHeader extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
 
-                  // Search + Sort Row (Polished Floating Inputs)
+                  // Search + Sort Row (Clean Floating Inputs)
                   Row(
                     children: [
                       Expanded(
@@ -260,7 +287,7 @@ class HomeHeader extends StatelessWidget {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
+                                color: Colors.black.withValues(alpha: 0.10),
                                 blurRadius: 10,
                                 offset: const Offset(0, 3),
                               ),
@@ -331,7 +358,7 @@ class HomeHeader extends StatelessWidget {
                               BoxShadow(
                                 color: isSorted
                                     ? AppColors.primary.withValues(alpha: 0.35)
-                                    : Colors.black.withValues(alpha: 0.08),
+                                    : Colors.black.withValues(alpha: 0.10),
                                 blurRadius: 10,
                                 offset: const Offset(0, 3),
                               ),

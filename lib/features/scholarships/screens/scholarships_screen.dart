@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/mock/mock_scholarships.dart';
 import '../../../data/models/scholarship_model.dart';
 import '../../notifications/screens/notifications_screen.dart';
+import '../widgets/apply_scholarship_modal.dart';
 import '../widgets/scholarship_card.dart';
 
 enum ScholarshipFilter { all, saved, closingSoon }
@@ -50,6 +51,15 @@ class _ScholarshipScreenState extends State<ScholarshipScreen> {
         return item;
       }).toList();
     });
+  }
+
+  void _openApplyModal(ScholarshipModel scholarship) {
+    if (scholarship.isApplied) return;
+    ApplyScholarshipModal.show(
+      context: context,
+      scholarship: scholarship,
+      onSubmitted: () => _applyForScholarship(scholarship),
+    );
   }
 
   void _applyForScholarship(ScholarshipModel scholarship) {
@@ -397,7 +407,7 @@ class _ScholarshipScreenState extends State<ScholarshipScreen> {
                         return ScholarshipCard(
                           scholarship: item,
                           onToggleSave: () => _toggleSave(item.id),
-                          onApply: () => _applyForScholarship(item),
+                          onApply: () => _openApplyModal(item),
                         );
                       },
                     ),

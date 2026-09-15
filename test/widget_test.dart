@@ -3,11 +3,54 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uniwiki/app.dart';
 import 'package:uniwiki/core/services/notification_service.dart';
 import 'package:uniwiki/core/widgets/custom_bottom_nav_bar.dart';
+import 'package:uniwiki/features/splash/screens/loading_screen.dart';
+import 'package:uniwiki/routes/app_routes.dart';
 
 void main() {
+  testWidgets('app launch shows loading page on white background and navigates home after 2 seconds', (WidgetTester tester) async {
+    await tester.pumpWidget(const UniWikiApp());
+    await tester.pump();
+
+    // Verify loading page is displayed with white background and loading_page.png
+    expect(find.byType(LoadingScreen), findsOneWidget);
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, Colors.white);
+
+    final image = tester.widget<Image>(find.byType(Image));
+    expect((image.image as AssetImage).assetName, 'assets/images/loading_page.png');
+    expect(find.text('Find your right fit university'), findsNothing);
+
+    // Advance 1 second - should still be on loading screen
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(LoadingScreen), findsOneWidget);
+    expect(find.text('Find your right fit university'), findsNothing);
+
+    // Advance remaining 1 second (total 2 seconds)
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    // Verify transitioned to Home Screen
+    expect(find.byType(LoadingScreen), findsNothing);
+    expect(find.text('Find your right fit university'), findsOneWidget);
+  });
+
+  testWidgets('HomeHeader displays logo.png blended in the center of the gradient card', (WidgetTester tester) async {
+    await tester.pumpWidget(const UniWikiApp(initialRoute: AppRoutes.home));
+    await tester.pumpAndSettle();
+
+    final logoByteData = await DefaultAssetBundle.of(tester.element(find.byType(Container).first)).load('assets/images/logo.png');
+    expect(logoByteData.lengthInBytes, greaterThan(1000));
+
+    final logoFinder = find.byWidgetPredicate((widget) =>
+        widget is Image &&
+        widget.image is AssetImage &&
+        (widget.image as AssetImage).assetName == 'assets/images/logo.png');
+    expect(logoFinder, findsOneWidget);
+  });
+
   testWidgets('renders UniWiki and navigates to Scholarship Tracker', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const UniWikiApp());
+    await tester.pumpWidget(const UniWikiApp(initialRoute: AppRoutes.home));
     await tester.pumpAndSettle();
 
     // Verify Home Screen elements
@@ -41,15 +84,56 @@ void main() {
     expect(applyButtons, findsWidgets);
 
     await tester.tap(applyButtons.first);
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    // Verify notification was created
+    // Verify Apply Scholarship modal popped up over blurred background
+    expect(find.text('Apply for Scholarship'), findsOneWidget);
+
+    // Test that dragging down dismisses the modal without submitting
+    await tester.drag(find.text('Apply for Scholarship'), const Offset(0, 500));
+    await tester.pumpAndSettle();
+    expect(find.text('Apply for Scholarship'), findsNothing);
+    expect(NotificationService.instance.notifications.length, initialNotifCount);
+
+    // Re-open modal to test form fields and submission
+    await tester.tap(applyButtons.first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Apply for Scholarship'), findsOneWidget);
+    expect(find.text('Full Name *'), findsOneWidget);
+    expect(find.text('Date of Birth *'), findsOneWidget);
+    expect(find.text('Email *'), findsOneWidget);
+    expect(find.text('Phone Number *'), findsOneWidget);
+    expect(find.text('Nationality / Country of Residence *'), findsOneWidget);
+    expect(find.text('Intended Major / Field of Study *'), findsOneWidget);
+    expect(find.text('Why do you deserve this scholarship? *'), findsOneWidget);
+
+    // Fill in applicant details into the empty fields
+    final textFields = find.byType(TextFormField);
+    expect(textFields, findsNWidgets(7));
+    await tester.enterText(textFields.at(0), 'Pu Do');
+    await tester.enterText(textFields.at(1), '15/08/2005');
+    await tester.enterText(textFields.at(2), 'pu.do@uniwiki.edu.kh');
+    await tester.enterText(textFields.at(3), '+855 12 345 678');
+    await tester.enterText(textFields.at(4), 'Cambodian');
+    await tester.enterText(textFields.at(5), 'Computer Science');
+    await tester.enterText(textFields.at(6), 'I am passionate about software engineering and community development.');
+    await tester.pumpAndSettle();
+
+    // Scroll to Submit button and tap Submit Application
+    final submitButton = find.text('Submit Application');
+    expect(submitButton, findsOneWidget);
+    await tester.ensureVisible(submitButton);
+    await tester.pumpAndSettle();
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+
+    // Verify modal closed and notification was created
+    expect(find.text('Apply for Scholarship'), findsNothing);
     expect(NotificationService.instance.notifications.length, initialNotifCount + 1);
 
-    // Verify snackbar is displayed
+    // Verify confirmation popup is displayed
     expect(find.text('Application Sent!'), findsOneWidget);
-
-    await tester.pumpAndSettle();
 
     // Verify button transitioned to 'Applied'
     expect(find.text('Applied'), findsOneWidget);
@@ -61,11 +145,13 @@ void main() {
   });
 
   testWidgets('bookmarks university and removes it with swipe to delete', (WidgetTester tester) async {
-    await tester.pumpWidget(const UniWikiApp());
+    await tester.pumpWidget(const UniWikiApp(initialRoute: AppRoutes.home));
     await tester.pumpAndSettle();
 
     // Bookmark the first university on Home
     final bookmarkBtn = find.byTooltip('Save bookmark').first;
+    await tester.ensureVisible(bookmarkBtn);
+    await tester.pumpAndSettle();
     await tester.tap(bookmarkBtn);
     await tester.pumpAndSettle();
 
@@ -89,7 +175,7 @@ void main() {
   });
 
   testWidgets('navigates to Profile screen, verifies user details and tests logout confirmation dialog', (WidgetTester tester) async {
-    await tester.pumpWidget(const UniWikiApp());
+    await tester.pumpWidget(const UniWikiApp(initialRoute: AppRoutes.home));
     await tester.pumpAndSettle();
 
     // Tap on Pu Do profile header avatar on Home Screen
@@ -137,7 +223,7 @@ void main() {
   });
 
   testWidgets('navigates to UniversityScreen, verifies background and unique majors, and toggles bookmark', (WidgetTester tester) async {
-    await tester.pumpWidget(const UniWikiApp());
+    await tester.pumpWidget(const UniWikiApp(initialRoute: AppRoutes.home));
     await tester.pumpAndSettle();
 
     // Tap on RUPP university card on Home
@@ -164,6 +250,23 @@ void main() {
     await tester.tap(copyBtn);
     await tester.pumpAndSettle();
     expect(find.text('Address copied to clipboard!'), findsOneWidget);
+
+    // Verify and test Apply Scholarship button for RUPP
+    final ruppApplyBtn = find.text('Apply Scholarship');
+    expect(ruppApplyBtn, findsOneWidget);
+    await tester.ensureVisible(ruppApplyBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(ruppApplyBtn);
+    await tester.pumpAndSettle();
+
+    // Verify modal opened with RUPP STEM Talent Grant
+    expect(find.text('Apply for Scholarship'), findsOneWidget);
+    expect(find.textContaining('RUPP STEM Talent Grant'), findsOneWidget);
+
+    // Dismiss modal by dragging down
+    await tester.drag(find.text('Apply for Scholarship'), const Offset(0, 500));
+    await tester.pumpAndSettle();
+    expect(find.text('Apply for Scholarship'), findsNothing);
 
     // Verify RUPP specific majors exist
     final csMajorCard = find.text('Computer Science');
@@ -236,10 +339,49 @@ void main() {
     expect(find.text('Analyse Mathématique I (Differential Calculus)'), findsOneWidget);
     expect(find.text('Algorithmique & Programmation en Langage C'), findsOneWidget);
     expect(find.text('Embedded Systems Engineer'), findsOneWidget);
+
+    // Return to ITC university screen
+    final itcMajorBack = find.byTooltip('Back to University');
+    await tester.tap(itcMajorBack);
+    await tester.pumpAndSettle();
+
+    // Return to Home
+    final itcBack = find.byTooltip('Back');
+    await tester.tap(itcBack);
+    await tester.pumpAndSettle();
+
+    // Search for Beltei International University (institution without scholarship)
+    final searchInput = find.byType(TextField);
+    await tester.enterText(searchInput, 'Beltei');
+    await tester.pumpAndSettle();
+
+    final belteiCard = find.text('BELTEI International University');
+    expect(belteiCard, findsOneWidget);
+    await tester.tap(belteiCard);
+    await tester.pumpAndSettle();
+
+    final currentNotifCount = NotificationService.instance.notifications.length;
+
+    // Tap Apply Scholarship on Beltei
+    final belteiApplyBtn = find.text('Apply Scholarship');
+    await tester.ensureVisible(belteiApplyBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(belteiApplyBtn);
+    await tester.pumpAndSettle();
+
+    // Verify one-line bottom pop text appears saying Unavailable Scholarship
+    expect(find.text('Unavailable Scholarship'), findsOneWidget);
+
+    // Verify notification was dispatched
+    expect(NotificationService.instance.notifications.length, currentNotifCount + 1);
+    expect(
+      NotificationService.instance.notifications.first.title,
+      'Unavailable Scholarship',
+    );
   });
 
   testWidgets('taps top major card on Home, shows all offering universities, and tapping one directs to that major', (WidgetTester tester) async {
-    await tester.pumpWidget(const UniWikiApp());
+    await tester.pumpWidget(const UniWikiApp(initialRoute: AppRoutes.home));
     await tester.pumpAndSettle();
 
     // Find and scroll to Top Major section on Home Screen
@@ -295,7 +437,7 @@ void main() {
   });
 
   testWidgets('tests Home search, sort bottom sheet, and See All for universities, majors and categories', (WidgetTester tester) async {
-    await tester.pumpWidget(const UniWikiApp());
+    await tester.pumpWidget(const UniWikiApp(initialRoute: AppRoutes.home));
     await tester.pumpAndSettle();
 
     // 1. Test Search on Home
@@ -373,7 +515,7 @@ void main() {
   });
 
   testWidgets('navigates to Comparison screen, tests searchable university selection, major pickers, and side-by-side course & tuition comparison', (WidgetTester tester) async {
-    await tester.pumpWidget(const UniWikiApp());
+    await tester.pumpWidget(const UniWikiApp(initialRoute: AppRoutes.home));
     await tester.pumpAndSettle();
 
     // Tap on Compare nav item
